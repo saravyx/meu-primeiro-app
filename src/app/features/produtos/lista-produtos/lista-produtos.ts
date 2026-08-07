@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, effect} from '@angular/core';
 import { Produto } from '../produto/produto';
 
 @Component({
@@ -20,16 +20,46 @@ export class ListaProdutos {
     return this.produtos().reduce((total, item) => total + item.preco, 0);
   });
 
-  exibirProduto(nome: string) {
-    console.log('Produto selecionado:', nome);
-    // Aqui você pode atualizar o estado, abrir modal, etc.
-  }
+  quantidadeCarrinho = computed(() => this.carrinho().length);
+  
+  totalCarrinho = computed(() => {
+    return this.carrinho().reduce((total, item) => total + item.preco, 0);
+  });
+  
 
+
+
+
+  exibirProduto(nome: string) {
+    this.produtoSelecionado.set(nome);
+  }
   adicionarProduto() {
     this.produtos.update((listaAtual) => [...listaAtual, { nome: 'Teclado', preco: 250 }]);
   }
   substituirProdutos() {
     this.produtos.set([{ nome: 'Produto novo', preco: 999 }]);
   }
+// parte do carrinho de compras
+  carrinho = signal<{ nome: string; preco: number }[]>([]);
+
+  adicionarAoCarrinho(produto: { nome: string; preco: number }) {
+    this.carrinho.update((listaAtual) => [...listaAtual, produto]);
+  }
+
+
+  constructor() {
+    effect(() => {
+      console.log('Lista de produtos alterada:', this.produtos());
+  
+  });
+  effect(() => {
+      if (typeof document !== 'undefined') {
+        document.title = `(${this.totalProdutos()}) Minha Loja`;
+      }
+     
+    });
+
+  }
+produtoSelecionado = signal<string | null>(null);
 
 }
