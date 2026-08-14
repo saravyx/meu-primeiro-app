@@ -1,4 +1,5 @@
-import { Component, signal, computed, effect} from '@angular/core';
+import { Component, signal, computed, effect, inject } from '@angular/core';
+import { ProdutosService } from '../produtos.service';
 import { Produto } from '../produto/produto';
 
 @Component({
@@ -8,12 +9,41 @@ import { Produto } from '../produto/produto';
   styleUrl: './lista-produtos.css',
 })
 export class ListaProdutos {
-  produtos = signal([
-    { nome: 'Notebook', preco: 3800 },
-    { nome: 'Mouse', preco: 179 },
-    { nome: 'Fone de ouvido', preco: 80 },
-  ]);
-  //
+  
+  constructor() {
+    // carrega da API
+    this.carregarProdutos();
+
+    // effects continuam iguais
+    effect(() => {
+      console.log('Lista de produtos alterada:', this.produtos());
+    });
+    effect(() => {
+      console.log('Valor total atualizado:', this.valorTotal());
+    });
+    effect(() => {
+      if (typeof document !== 'undefined') {
+        document.title = `(${this.totalProdutos()}) Minha Loja`;
+      }
+    });
+  }
+
+  private produtosService = inject(ProdutosService);
+
+  // SIGNALS
+
+  erro = signal<string | null>(null);
+
+  carregando = signal(true);
+
+  produtos = signal<{ nome: string; preco: number }[]>([]);
+
+  produtoSelecionado = signal<string | null>(null);
+
+  carrinho = signal<{ nome: string; preco: number }[]>([]);
+
+  // COMPUTED
+
   totalProdutos = computed(() => this.produtos().length);
 
   valorTotal = computed(() => {
@@ -21,45 +51,43 @@ export class ListaProdutos {
   });
 
   quantidadeCarrinho = computed(() => this.carrinho().length);
-  
+
   totalCarrinho = computed(() => {
     return this.carrinho().reduce((total, item) => total + item.preco, 0);
   });
-  
-
-
-
 
   exibirProduto(nome: string) {
     this.produtoSelecionado.set(nome);
   }
+
   adicionarProduto() {
     this.produtos.update((listaAtual) => [...listaAtual, { nome: 'Teclado', preco: 250 }]);
   }
+
   substituirProdutos() {
     this.produtos.set([{ nome: 'Produto novo', preco: 999 }]);
   }
-// parte do carrinho de compras
-  carrinho = signal<{ nome: string; preco: number }[]>([]);
 
   adicionarAoCarrinho(produto: { nome: string; preco: number }) {
     this.carrinho.update((listaAtual) => [...listaAtual, produto]);
   }
 
-
-  constructor() {
-    effect(() => {
-      console.log('Lista de produtos alterada:', this.produtos());
-  
-  });
-  effect(() => {
-      if (typeof document !== 'undefined') {
-        document.title = `(${this.totalProdutos()}) Minha Loja`;
-      }
-     
+  carregarProdutos() {
+    this.erro.set(null); // limpa erro anterior
+    this.carregando.set(true); // ativa loading
+    this.produtosService.buscarProdutos().subscribe({
+      next: (dados) => {
+        const produtos = this.produtosService.transformarProdutos(dados);
+        this.produtos.set(produtos);
+        this.carregando.set(false);
+      },
+      error: (erro) => {
+        console.error('Erro ao carregar produtos:', erro);
+        this.erro.set('Erro ao carregar produtos. Verifique sua conexão e tente novamente.');
+        this.carregando.set(false);
+      },
     });
-
   }
-produtoSelecionado = signal<string | null>(null);
-
 }
+
+

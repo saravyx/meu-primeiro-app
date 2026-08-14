@@ -1,4 +1,4 @@
-
+  import { authGuard } from './core/auth.guard' 
   import { Routes } from '@angular/router';
   export const routes: Routes = [
     {
@@ -12,8 +12,10 @@
     },
     {
       path: 'carrinho',
+      canActivate: [authGuard],
       loadComponent: () => import('./features/carrinho/carrinho/carrinho').then((m) => m.Carrinho),
     },
+
     {
       path: '**',
       redirectTo: '',
