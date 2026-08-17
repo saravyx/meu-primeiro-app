@@ -20,4 +20,12 @@
       path: '**',
       redirectTo: '',
     },
+     {
+    path: 'checkout',
+    loadComponent: () => import('./features/checkout/checkout/checkout').then((m) => m.Checkout),
+  },
+
+ 
+
   ];
+   
